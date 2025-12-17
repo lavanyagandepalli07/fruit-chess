@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>🍓 Berry Chess 3D ♟️</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #fff1f2, #f5f3ff, #ecfeff);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        canvas {
+            border-radius: 32px;
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.3);
+            cursor: default;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .captured-slot {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+    </style>
+</head>
+
+<body class="flex flex-col items-center p-4 md:p-8 space-y-6">
+
+    <div class="text-center">
+        <h1 class="text-4xl md:text-5xl font-black text-rose-600 drop-shadow-sm tracking-tight">🍓 BERRY CHESS 🫐</h1>
+        <p class="text-slate-500 font-medium italic mt-1">Gourmet Fruit Models. Smooth turn transitions.</p>
+    </div>
+
+    <!-- ================= SETUP SCREEN ================= -->
+    <div id="setup" class="glass p-8 rounded-3xl shadow-2xl w-full max-w-md space-y-6 z-10 transition-all duration-500">
+        <div class="space-y-2 text-center">
+            <h2 class="text-2xl font-bold text-slate-800">Fresh Game</h2>
+            <p class="text-sm text-slate-500">Select your flavor and begin</p>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold uppercase text-slate-400 mb-1 ml-1">Match Type</label>
+                <select id="mode" class="w-full p-3 bg-white border-2 border-slate-100 rounded-xl focus:border-rose-300 outline-none transition-colors">
+                    <option value="hotseat">Local: 2 Players</option>
+                    <option value="ai">Solo: vs Master Berry AI</option>
+                </select>
+            </div>
+
+            <div id="names-grid" class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-1 ml-1">Team 🍓</label>
+                    <input id="p1" class="w-full p-3 bg-white border-2 border-slate-100 rounded-xl focus:border-rose-300 outline-none transition-colors" value="Strawberry">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-1 ml-1">Team 🫐</label>
+                    <input id="p2" class="w-full p-3 bg-white border-2 border-slate-100 rounded-xl focus:border-rose-300 outline-none transition-colors" value="Blueberry">
+                </div>
+            </div>
+
+            <div id="side-select" class="hidden">
+                <label class="block text-xs font-bold uppercase text-slate-400 mb-1 ml-1">Your Side</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="setSide('w')" id="btn-w" class="p-3 rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-600 font-bold">🍓 Strawberry</button>
+                    <button onclick="setSide('b')" id="btn-b" class="p-3 rounded-xl border-2 border-slate-200 bg-white text-slate-400 font-bold">🫐 Blueberry</button>
+                </div>
+            </div>
+
+            <button id="start" class="w-full bg-rose-500 hover:bg-rose-600 text-white p-4 rounded-2xl font-black text-lg shadow-lg shadow-rose-200 transform transition active:scale-95">
+                START HARVEST
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= GAME SCREEN ================= -->
+    <div id="game-ui" class="hidden w-full max-w-5xl flex flex-col items-center space-y-4">
+        <div class="flex flex-wrap justify-between w-full items-center bg-white/60 p-5 rounded-3xl backdrop-blur-md gap-4 border border-white shadow-sm">
+            <div class="flex items-center space-x-4">
+                <div id="turn-indicator" class="w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-inner bg-white/80 border border-white">🍓</div>
+                <div>
+                    <p id="status" class="font-bold text-xl text-slate-800 leading-tight">Strawberry's Turn</p>
+                    <p id="check-status" class="text-xs font-black text-rose-500 uppercase tracking-widest hidden">CHECK!</p>
+                </div>
+            </div>
+            
+            <div class="flex space-x-8">
+                <div class="text-center">
+                    <p class="text-[10px] font-bold text-rose-400 uppercase tracking-widest mb-1">Captured 🍓</p>
+                    <div id="captured-w" class="flex flex-wrap max-w-[120px] justify-center gap-1"></div>
+                </div>
+                <div class="text-center">
+                    <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Captured 🫐</p>
+                    <div id="captured-b" class="flex flex-wrap max-w-[120px] justify-center gap-1"></div>
+                </div>
+            </div>
+
+            <button onclick="location.reload()" class="bg-slate-800 text-white px-5 py-2 rounded-2xl text-sm font-bold hover:bg-slate-700 transition">Exit</button>
+        </div>
+
+        <div class="relative w-full flex justify-center">
+            <canvas id="game"></canvas>
+        </div>
+    </div>
+
+<script>
+/* ===================================================
+   STATE & CONSTANTS
+=================================================== */
+const CHESS_STATE = { W: "w", B: "b" };
+let MODE = "hotseat", PLAYER_W = "Strawberry", PLAYER_B = "Blueberry", HUMAN_SIDE = "w";
+let turn = CHESS_STATE.W, winner = null, selected = null, capturedW = [], capturedB = [];
+
+let board = [
+    ["bR","bN","bB","bQ","bK","bB","bN","bR"],
+    ["bP","bP","bP","bP","bP","bP","bP","bP"],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    ["wP","wP","wP","wP","wP","wP","wP","wP"],
+    ["wR","wN","wB","wQ","wK","wB","wN","wR"]
+];
+
+/* ===================================================
+   CHESS LOGIC
+=================================================== */
+const inside = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+const enemy = t => t === CHESS_STATE.W ? CHESS_STATE.B : CHESS_STATE.W;
+const clone = b => b.map(r => r.slice());
+
+function getKingPos(b, t) {
+    for (let r = 0; r < 8; r++)
+        for (let c = 0; c < 8; c++)
+            if (b[r][c] === t + "K") return [r, c];
+    return [0, 0];
+}
+
+function isCheck(b, t) {
+    const kp = getKingPos(b, t);
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            if (b[r][c]?.startsWith(enemy(t))) {
+                const moves = getLegalMoves(b, r, c, enemy(t), true);
+                if (moves.some(m => m[0] === kp[0] && m[1] === kp[1])) return true;
+            }
+        }
+    }
+    return false;
+}
+
+function getLegalMoves(b, r, c, t, ignoreCheck = false) {
+    const p = b[r][c];
+    if (!p) return [];
+    const type = p[1], moves = [], dir = t === CHESS_STATE.W ? -1 : 1;
+
+    if (type === "P") {
+        if (inside(r + dir, c) && !b[r + dir][c]) {
+            moves.push([r + dir, c]);
+            if ((t === CHESS_STATE.W && r === 6 && !b[r - 1][c] && !b[r - 2][c])) moves.push([r - 2, c]);
+            if ((t === CHESS_STATE.B && r === 1 && !b[r + 1][c] && !b[r + 2][c])) moves.push([r + 2, c]);
+        }
+        for (let dc of [-1, 1]) {
+            let nr = r + dir, nc = c + dc;
+            if (inside(nr, nc) && b[nr][nc]?.startsWith(enemy(t))) moves.push([nr, nc]);
+        }
+    }
+
+    const offsets = {
+        "N": [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]],
+        "K": [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]
+    };
+
+    if (offsets[type]) {
+        offsets[type].forEach(([dr, dc]) => {
+            let nr = r + dr, nc = c + dc;
+            if (inside(nr, nc) && (!b[nr][nc] || b[nr][nc].startsWith(enemy(t)))) moves.push([nr, nc]);
+        });
+    }
+
+    const slide = ds => ds.forEach(([dr, dc]) => {
+        let nr = r + dr, nc = c + dc;
+        while (inside(nr, nc)) {
+            if (!b[nr][nc]) moves.push([nr, nc]);
+            else {
+                if (b[nr][nc].startsWith(enemy(t))) moves.push([nr, nc]);
+                break;
+            }
+            nr += dr; nc += dc;
+        }
+    });
+
+    if (type === "R") slide([[1, 0], [-1, 0], [0, 1], [0, -1]]);
+    if (type === "B") slide([[1, 1], [1, -1], [-1, 1], [-1, -1]]);
+    if (type === "Q") slide([[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]);
+
+    if (ignoreCheck) return moves;
+
+    return moves.filter(([nr, nc]) => {
+        const nextB = clone(b);
+        nextB[nr][nc] = nextB[r][c];
+        nextB[r][c] = null;
+        return !isCheck(nextB, t);
+    });
+}
+
+const vals = { P: 10, N: 30, B: 30, R: 50, Q: 90, K: 900 };
+function aiMove() {
+    if (winner) return;
+    let options = [];
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            if (board[r][c]?.startsWith(turn)) {
+                getLegalMoves(board, r, c, turn).forEach(m => {
+                    let score = 0;
+                    const target = board[m[0]][m[1]];
+                    if (target) score += vals[target[1]]; 
+                    score += (4 - Math.abs(3.5 - m[0])) + (4 - Math.abs(3.5 - m[1]));
+                    options.push({ fr: r, fc: c, tr: m[0], tc: m[1], score });
+                });
+            }
+        }
+    }
+    if (options.length === 0) { winner = enemy(turn); updateUI(); return; }
+    options.sort((a, b) => b.score - a.score);
+    const chosen = options[0];
+    executeMove(chosen.fr, chosen.fc, chosen.tr, chosen.tc);
+}
+
+/* ===================================================
+   THREE.JS SETUP
+=================================================== */
+const canvas = document.getElementById("game");
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xfdf2f2);
+
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000);
+camera.position.set(0, 75, 80);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+function resize() {
+    const w = Math.min(800, window.innerWidth - 32);
+    renderer.setSize(w, w * 0.75);
+    camera.aspect = w / (w * 0.75);
+    camera.updateProjectionMatrix();
+}
+resize();
+window.addEventListener("resize", resize);
+
+const amb = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(amb);
+const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+sun.position.set(40, 100, 30);
+sun.castShadow = true;
+sun.shadow.mapSize.width = 2048;
+sun.shadow.mapSize.height = 2048;
+scene.add(sun);
+
+const boardGroup = new THREE.Group();
+const pieceGroup = new THREE.Group();
+const uiGroup = new THREE.Group();
+scene.add(boardGroup, pieceGroup, uiGroup);
+
+const CELL_SIZE = 10, BOARD_OFFSET = 35;
+
+for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+        const isDark = (r + c) % 2 === 1;
+        const mat = new THREE.MeshStandardMaterial({ 
+            color: isDark ? 0xffced4 : 0xffffff,
+            roughness: 0.2,
+            metalness: 0.1
+        });
+        const geo = new THREE.BoxGeometry(CELL_SIZE - 0.2, 2, CELL_SIZE - 0.2);
+        const sq = new THREE.Mesh(geo, mat);
+        sq.position.set(c * CELL_SIZE - BOARD_OFFSET, -1, r * CELL_SIZE - BOARD_OFFSET);
+        sq.receiveShadow = true;
+        sq.userData = { r, c };
+        boardGroup.add(sq);
+    }
+}
+
+// MATERIALS
+const strawColor = 0xcb1a2a; 
+const blueColor = 0x2e2b5f;   // Deeper base blueberry
+const blueAccent = 0x5b6bc7; // Lighter accent for crown
+const leafMat = new THREE.MeshPhongMaterial({ color: 0x2d9e6d, shininess: 15 });
+const seedMat = new THREE.MeshStandardMaterial({ color: 0xfff9c4, roughness: 0.1 });
+
+const createPieceGeo = (side, type) => {
+    const g = new THREE.Group();
+    const isW = side === 'w';
+    
+    const fruitMat = new THREE.MeshStandardMaterial({ 
+        color: isW ? strawColor : blueColor, 
+        roughness: 0.25, 
+        metalness: 0.05
+    });
+
+    const createStrawberrySeeds = (group, baseRadius, height, yOffset) => {
+        // Spiral seed distribution for realism
+        const seedCount = 45;
+        for (let i = 0; i < seedCount; i++) {
+            const t = i / seedCount;
+            const angle = i * 2.4; // Golden angle approx
+            const h = t * height;
+            // Radius tapers like a strawberry
+            const r = Math.sin(t * Math.PI) * baseRadius * 0.95;
+            
+            const seed = new THREE.Mesh(new THREE.SphereGeometry(0.12, 4, 4), seedMat);
+            seed.scale.set(0.6, 1.2, 0.6);
+            seed.position.set(Math.cos(angle) * r, h + yOffset - height/2, Math.sin(angle) * r);
+            group.add(seed);
+        }
+    };
+
+    let body, headY = 0;
+
+    if (isW) {
+        // Strawberry Shape: Conical / Heart shaped
+        switch(type) {
+            case 'P': 
+                body = new THREE.Mesh(new THREE.SphereGeometry(3, 20, 20), fruitMat);
+                body.scale.set(1, 1.3, 1);
+                body.position.y = 3.5;
+                createStrawberrySeeds(g, 3.1, 5, 3.5);
+                headY = 5.8;
+                break;
+            case 'R': 
+                body = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 3.5, 7, 20), fruitMat);
+                body.position.y = 3.5;
+                createStrawberrySeeds(g, 3.5, 7, 3.5);
+                headY = 7;
+                break;
+            case 'N': 
+                body = new THREE.Mesh(new THREE.TorusGeometry(2, 1.2, 16, 20), fruitMat);
+                body.position.y = 3.5; body.rotation.y = Math.PI/2;
+                headY = 6.5;
+                break;
+            case 'B': 
+                body = new THREE.Mesh(new THREE.ConeGeometry(3.2, 9, 20), fruitMat);
+                body.position.y = 4.5;
+                createStrawberrySeeds(g, 3.0, 9, 4.5);
+                headY = 9;
+                break;
+            case 'Q': 
+                body = new THREE.Mesh(new THREE.SphereGeometry(3.8, 20, 20), fruitMat);
+                body.scale.set(1, 1.4, 1);
+                body.position.y = 5;
+                createStrawberrySeeds(g, 3.9, 8, 5);
+                headY = 9.5;
+                break;
+            case 'K': 
+                body = new THREE.Mesh(new THREE.CylinderGeometry(2, 4, 10, 4, 1, false), fruitMat);
+                body.position.y = 5;
+                createStrawberrySeeds(g, 3.5, 10, 5);
+                headY = 10;
+                break;
+        }
+        g.add(body);
+
+        // Leaves/Sepals (The Green Top)
+        const leafGroup = new THREE.Group();
+        leafGroup.position.y = headY;
+        for (let i = 0; i < 6; i++) {
+            const leaf = new THREE.Mesh(new THREE.SphereGeometry(1.8, 8, 8), leafMat);
+            leaf.scale.set(1, 0.15, 0.6);
+            leaf.rotation.y = (i * Math.PI * 2) / 6;
+            leaf.position.x = Math.cos(leaf.rotation.y) * 1.2;
+            leaf.position.z = Math.sin(leaf.rotation.y) * 1.2;
+            leaf.rotation.z = 0.2;
+            leafGroup.add(leaf);
+        }
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 2, 8), leafMat);
+        stem.position.y = 1;
+        leafGroup.add(stem);
+        g.add(leafGroup);
+
+    } else {
+        // Blueberry Shape: Oblate Spheroid with accent crown
+        const accentMat = new THREE.MeshStandardMaterial({ color: blueAccent, roughness: 0.4 });
+        
+        switch(type) {
+            case 'P': 
+                body = new THREE.Mesh(new THREE.SphereGeometry(3.2, 20, 20), fruitMat);
+                body.scale.set(1.1, 0.9, 1.1);
+                body.position.y = 3;
+                headY = 5.2;
+                break;
+            case 'R': 
+                body = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 3.5, 6, 20), fruitMat);
+                body.position.y = 3;
+                headY = 6;
+                break;
+            case 'N': 
+                body = new THREE.Mesh(new THREE.TorusGeometry(2, 1.3, 16, 20), fruitMat);
+                body.position.y = 3.5; body.rotation.y = Math.PI/2;
+                headY = 6.5;
+                break;
+            case 'B': 
+                body = new THREE.Mesh(new THREE.SphereGeometry(3.2, 20, 20), fruitMat);
+                body.scale.set(0.8, 1.5, 0.8);
+                body.position.y = 4.5;
+                headY = 9;
+                break;
+            case 'Q': 
+                body = new THREE.Mesh(new THREE.SphereGeometry(4.2, 20, 20), fruitMat);
+                body.scale.set(1.1, 0.9, 1.1);
+                body.position.y = 4;
+                headY = 6.5;
+                break;
+            case 'K': 
+                body = new THREE.Mesh(new THREE.BoxGeometry(5, 8, 5), fruitMat);
+                body.position.y = 4;
+                headY = 8;
+                break;
+        }
+        g.add(body);
+
+        // Blueberry Crown (Calyx)
+        const crown = new THREE.Group();
+        crown.position.y = headY;
+        const baseRing = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.4, 8, 16), accentMat);
+        baseRing.rotation.x = Math.PI/2;
+        crown.add(baseRing);
+        
+        for (let i = 0; i < 5; i++) {
+            const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.2, 3), accentMat);
+            tooth.rotation.x = -0.5;
+            const ang = (i / 5) * Math.PI * 2;
+            tooth.position.set(Math.cos(ang)*1.2, 0.4, Math.sin(ang)*1.2);
+            tooth.rotation.y = -ang;
+            crown.add(tooth);
+        }
+        g.add(crown);
+    }
+    return g;
+};
+
+function drawBoard() {
+    pieceGroup.clear();
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const p = board[r][c];
+            if (!p) continue;
+            const container = new THREE.Group();
+            const visuals = createPieceGeo(p[0], p[1]);
+            visuals.traverse(node => {
+                if (node.isMesh) {
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                }
+            });
+            container.add(visuals);
+            container.position.set(c * CELL_SIZE - BOARD_OFFSET, 0, r * CELL_SIZE - BOARD_OFFSET);
+            container.userData = { r, c };
+            pieceGroup.add(container);
+            if (selected && selected.r === r && selected.c === c) {
+                const ring = new THREE.Mesh(
+                    new THREE.TorusGeometry(4.5, 0.4, 8, 32),
+                    new THREE.MeshBasicMaterial({ color: 0x10b981 })
+                );
+                ring.rotation.x = Math.PI/2;
+                ring.position.y = 0.5;
+                container.add(ring);
+            }
+        }
+    }
+}
+
+function drawUI() {
+    uiGroup.clear();
+    if (!selected) return;
+    getLegalMoves(board, selected.r, selected.c, turn).forEach(([mr, mc]) => {
+        const dot = new THREE.Mesh(
+            new THREE.CircleGeometry(2.2, 24),
+            new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.4 })
+        );
+        dot.rotation.x = -Math.PI/2;
+        dot.position.set(mc * CELL_SIZE - BOARD_OFFSET, 0.2, mr * CELL_SIZE - BOARD_OFFSET);
+        uiGroup.add(dot);
+    });
+}
+
+/* ===================================================
+   TRANSITION LOGIC
+=================================================== */
+let currentTheta = Math.PI / 2; 
+let targetTheta = Math.PI / 2;
+const FIXED_PHI = Math.PI / 3.5; 
+const RADIUS = 110;
+
+function updateCameraTurn() {
+    if (MODE === "hotseat") {
+        targetTheta = turn === CHESS_STATE.W ? Math.PI / 2 : -Math.PI / 2;
+    } else {
+        targetTheta = HUMAN_SIDE === CHESS_STATE.W ? Math.PI / 2 : -Math.PI / 2;
+    }
+}
+
+const ray = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+canvas.onclick = (e) => {
+    if (winner || (MODE === "ai" && turn !== HUMAN_SIDE)) return;
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    ray.setFromCamera(mouse, camera);
+
+    const hits = ray.intersectObjects([...pieceGroup.children, ...boardGroup.children], true);
+    if (!hits.length) return;
+
+    let target = hits[0].object;
+    while(target.parent && target.userData.r === undefined) target = target.parent;
+    const { r, c } = target.userData;
+
+    if (board[r][c]?.startsWith(turn)) {
+        selected = { r, c };
+    } else if (selected) {
+        const moves = getLegalMoves(board, selected.r, selected.c, turn);
+        if (moves.some(m => m[0] === r && m[1] === c)) {
+            executeMove(selected.r, selected.c, r, c);
+            selected = null;
+        } else { selected = null; }
+    }
+    drawBoard(); drawUI();
+};
+
+function executeMove(fr, fc, tr, tc) {
+    const captured = board[tr][tc];
+    if (captured) {
+        if (captured[0] === CHESS_STATE.W) capturedW.push('🍓'); else capturedB.push('🫐');
+    }
+    board[tr][tc] = board[fr][fc];
+    board[fr][fc] = null;
+    if (board[tr][tc] === "wP" && tr === 0) board[tr][tc] = "wQ";
+    if (board[tr][tc] === "bP" && tr === 7) board[tr][tc] = "bQ";
+    
+    turn = enemy(turn);
+    updateCameraTurn();
+    
+    updateUI(); drawBoard(); drawUI();
+    if (MODE === "ai" && turn !== HUMAN_SIDE) setTimeout(aiMove, 1200); 
+}
+
+function updateUI() {
+    const statusLabel = document.getElementById("status");
+    const checkStatus = document.getElementById("check-status");
+    const indicator = document.getElementById("turn-indicator");
+
+    if (winner) {
+        statusLabel.textContent = `${winner === CHESS_STATE.W ? PLAYER_W : PLAYER_B} Harvested a Win! 🏆`;
+        checkStatus.classList.add("hidden");
+    } else {
+        const name = turn === CHESS_STATE.W ? PLAYER_W : PLAYER_B;
+        statusLabel.textContent = `${name}'s Turn`;
+        indicator.textContent = turn === CHESS_STATE.W ? "🍓" : "🫐";
+        checkStatus.classList.toggle("hidden", !isCheck(board, turn));
+    }
+
+    document.getElementById("captured-w").innerHTML = capturedW.map(() => `<div class="captured-slot">🍓</div>`).join('');
+    document.getElementById("captured-b").innerHTML = capturedB.map(() => `<div class="captured-slot">🫐</div>`).join('');
+}
+
+function setSide(s) {
+    HUMAN_SIDE = s;
+    document.getElementById("btn-w").className = s === 'w' ? "p-3 rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-600 font-bold" : "p-3 rounded-xl border-2 border-slate-200 bg-white text-slate-400 font-bold";
+    document.getElementById("btn-b").className = s === 'b' ? "p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50 text-indigo-600 font-bold" : "p-3 rounded-xl border-2 border-slate-200 bg-white text-slate-400 font-bold";
+    updateCameraTurn();
+}
+
+document.getElementById("mode").onchange = (e) => {
+    document.getElementById("side-select").classList.toggle("hidden", e.target.value !== "ai");
+};
+
+document.getElementById("start").onclick = () => {
+    MODE = document.getElementById("mode").value;
+    PLAYER_W = document.getElementById("p1").value || "Strawberry";
+    PLAYER_B = document.getElementById("p2").value || "Blueberry";
+    document.getElementById("setup").classList.add("hidden");
+    document.getElementById("game-ui").classList.remove("hidden");
+    updateCameraTurn();
+    if (MODE === "ai" && HUMAN_SIDE === 'b') setTimeout(aiMove, 1500); 
+    updateUI(); drawBoard();
+};
+
+function animate() {
+    requestAnimationFrame(animate);
+    const diff = targetTheta - currentTheta;
+    let shortest = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
+    if (Math.abs(shortest) > 0.001) currentTheta += shortest * 0.08;
+
+    camera.position.x = RADIUS * Math.sin(FIXED_PHI) * Math.cos(currentTheta);
+    camera.position.y = RADIUS * Math.cos(FIXED_PHI);
+    camera.position.z = RADIUS * Math.sin(FIXED_PHI) * Math.sin(currentTheta);
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
