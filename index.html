@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>🍓 Berry Chess 3D ♟️</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body class="flex flex-col items-center p-4 md:p-8 space-y-6">
+
+    <!-- TITLE -->
+    <div class="text-center">
+        <h1 class="text-4xl md:text-5xl font-black text-rose-600">
+            🍓 BERRY CHESS 🫐
+        </h1>
+        <p class="text-slate-500 italic">
+            Gourmet Fruit Models · Smooth Turn Transitions
+        </p>
+    </div>
+
+    <!-- SETUP SCREEN -->
+    <div id="setup" class="glass p-8 rounded-3xl shadow-2xl w-full max-w-md space-y-6">
+        <h2 class="text-2xl font-bold text-center">Fresh Game</h2>
+
+        <select id="mode" class="w-full p-3 rounded-xl border">
+            <option value="hotseat">Local: 2 Players</option>
+            <option value="ai">Solo: vs Berry AI</option>
+        </select>
+
+        <div class="grid grid-cols-2 gap-3">
+            <input id="p1" value="Strawberry" class="p-3 rounded-xl border" />
+            <input id="p2" value="Blueberry" class="p-3 rounded-xl border" />
+        </div>
+
+        <div id="side-select" class="hidden grid grid-cols-2 gap-3">
+            <button onclick="setSide('w')" id="btn-w" class="btn-active">🍓 Strawberry</button>
+            <button onclick="setSide('b')" id="btn-b" class="btn-inactive">🫐 Blueberry</button>
+        </div>
+
+        <button id="start" class="btn-main w-full">
+            START HARVEST
+        </button>
+    </div>
+
+    <!-- GAME UI -->
+    <div id="game-ui" class="hidden w-full max-w-5xl space-y-4">
+        <div class="hud">
+            <div class="flex items-center space-x-4">
+                <div id="turn-indicator" class="turn-circle">🍓</div>
+                <div>
+                    <p id="status" class="font-bold text-xl"></p>
+                    <p id="check-status" class="text-xs hidden text-rose-500">CHECK</p>
+                </div>
+            </div>
+
+            <button onclick="location.reload()" class="exit-btn">Exit</button>
+        </div>
+
+        <canvas id="game"></canvas>
+    </div>
+
+    <!-- JS ENTRY -->
+    <script src="js/state.js"></script>
+    <script src="js/chessLogic.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/threeSetup.js"></script>
+    <script src="js/pieces.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+
+</body>
+</html>
