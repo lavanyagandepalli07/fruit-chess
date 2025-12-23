@@ -1,0 +1,59 @@
+body {
+    background: linear-gradient(135deg, #fff1f2, #f5f3ff, #ecfeff);
+    min-height: 100vh;
+    font-family: system-ui, sans-serif;
+}
+
+canvas {
+    border-radius: 32px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+}
+
+.glass {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(12px);
+}
+
+.btn-main {
+    background: #f43f5e;
+    color: white;
+    padding: 1rem;
+    border-radius: 1rem;
+    font-weight: bold;
+}
+
+.btn-active {
+    background: #ffe4e6;
+    border: 2px solid #f43f5e;
+}
+
+.btn-inactive {
+    background: white;
+    border: 2px solid #ddd;
+}
+
+.hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.7);
+    padding: 1rem;
+    border-radius: 1.5rem;
+}
+
+.turn-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.exit-btn {
+    background: #1f2937;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+}
