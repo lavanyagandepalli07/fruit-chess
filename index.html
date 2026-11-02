@@ -29,10 +29,14 @@
             --page-foreground: #e2e8f0;
         }
         body.dark-mode[data-side="w"] {
-            --page-background: #21171c;
+            --page-background: #321923;
+            --panel-background: rgba(67, 31, 45, 0.94);
+            --panel-border: rgba(190, 92, 119, 0.38);
         }
         body.dark-mode[data-side="b"] {
-            --page-background: #171d2b;
+            --page-background: #17284b;
+            --panel-background: rgba(31, 52, 88, 0.94);
+            --panel-border: rgba(92, 132, 204, 0.42);
         }
         .theme-toggle {
             position: absolute;
@@ -54,12 +58,18 @@
             background: rgba(255, 255, 255, 0.96);
         }
         body.dark-mode .theme-toggle {
-            background: #303746;
             color: #f1f5f9;
-            border-color: #475569;
+        }
+        body.dark-mode[data-side="w"] .theme-toggle {
+            background: #54283a;
+            border-color: #9e4b65;
+        }
+        body.dark-mode[data-side="b"] .theme-toggle {
+            background: #263f70;
+            border-color: #5275b7;
         }
         body.dark-mode .theme-toggle:hover {
-            background: #3c4658;
+            filter: brightness(1.15);
         }
         canvas {
             border-radius: 32px;
@@ -82,8 +92,8 @@
         }
         body.dark-mode .glass,
         body.dark-mode #game-ui > div:first-child {
-            background: rgba(30, 41, 59, 0.9);
-            border-color: rgba(100, 116, 139, 0.35);
+            background: var(--panel-background);
+            border-color: var(--panel-border);
             color: #e2e8f0;
         }
         body.dark-mode .text-slate-800 {
@@ -100,8 +110,8 @@
             color: #f1f5f9;
         }
         body.dark-mode #turn-indicator {
-            background-color: #334155;
-            border-color: #475569;
+            background-color: var(--page-background);
+            border-color: var(--panel-border);
         }
     </style>
 </head>
@@ -459,15 +469,15 @@ function updateTheme() {
     document.body.classList.toggle("dark-mode", darkMode);
     document.body.dataset.side = side;
     const background = darkMode
-        ? side === CHESS_STATE.W ? 0x21171c : 0x171d2b
+        ? side === CHESS_STATE.W ? 0x321923 : 0x17284b
         : side === CHESS_STATE.W ? 0xfff1f4 : 0xeff5ff;
     scene.background.setHex(background);
 
     for (const square of boardGroup.children) {
         const colors = darkMode
             ? side === CHESS_STATE.W
-                ? [0x51404a, 0x393038]
-                : [0x384761, 0x293243]
+                ? [0x6b2638, 0x48202d]
+                : [0x25477f, 0x1b315a]
             : side === CHESS_STATE.W
                 ? [0xf4cbd2, 0xfff7f8]
                 : [0xd4e1f8, 0xf6f9ff];
