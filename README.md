@@ -1,6 +1,7 @@
 # Fruit Chess
 
-A 3D strawberry-versus-blueberry chess game.
+A 3D strawberry-versus-blueberry chess game with clear fruit tokens and
+piece labels on polished, team-colored pedestals.
 
 ## Run
 
