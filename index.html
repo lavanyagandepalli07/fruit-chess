@@ -38,6 +38,14 @@
             --panel-background: rgba(31, 52, 88, 0.94);
             --panel-border: rgba(92, 132, 204, 0.42);
         }
+        body[data-screen="setup"] {
+            --page-background: #f0f8f0;
+        }
+        body.dark-mode[data-screen="setup"] {
+            --page-background: #193322;
+            --panel-background: rgba(34, 62, 43, 0.96);
+            --panel-border: rgba(111, 157, 121, 0.42);
+        }
         .theme-toggle {
             position: absolute;
             top: 0;
@@ -67,6 +75,10 @@
         body.dark-mode[data-side="b"] .theme-toggle {
             background: #263f70;
             border-color: #5275b7;
+        }
+        body.dark-mode[data-screen="setup"] .theme-toggle {
+            background: #294d35;
+            border-color: #6f9d79;
         }
         body.dark-mode .theme-toggle:hover {
             filter: brightness(1.15);
@@ -468,9 +480,12 @@ function updateTheme() {
         : setupMode === "ai" ? HUMAN_SIDE : CHESS_STATE.W;
     document.body.classList.toggle("dark-mode", darkMode);
     document.body.dataset.side = side;
-    const background = darkMode
-        ? side === CHESS_STATE.W ? 0x321923 : 0x17284b
-        : side === CHESS_STATE.W ? 0xfff1f4 : 0xeff5ff;
+    document.body.dataset.screen = gameStarted ? "game" : "setup";
+    const background = !gameStarted
+        ? darkMode ? 0x193322 : 0xf0f8f0
+        : darkMode
+            ? side === CHESS_STATE.W ? 0x321923 : 0x17284b
+            : side === CHESS_STATE.W ? 0xfff1f4 : 0xeff5ff;
     scene.background.setHex(background);
 
     for (const square of boardGroup.children) {
