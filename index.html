@@ -7,12 +7,59 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
+        :root {
+            color-scheme: light;
+            --page-background: #fff1f4;
+            --page-foreground: #1e293b;
+        }
         body {
-            background: linear-gradient(135deg, #fff1f2, #f5f3ff, #ecfeff);
+            background: var(--page-background);
+            color: var(--page-foreground);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
             touch-action: manipulation;
+            transition: background-color 250ms ease, color 250ms ease;
+        }
+        body[data-side="b"] {
+            --page-background: #eff5ff;
+        }
+        body.dark-mode {
+            color-scheme: dark;
+            --page-foreground: #e2e8f0;
+        }
+        body.dark-mode[data-side="w"] {
+            --page-background: #21171c;
+        }
+        body.dark-mode[data-side="b"] {
+            --page-background: #171d2b;
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            border-radius: 9999px;
+            padding: 0.55rem 0.9rem;
+            background: rgba(255, 255, 255, 0.72);
+            color: #334155;
+            font-size: 0.875rem;
+            font-weight: 700;
+            transition: background-color 200ms ease, color 200ms ease;
+        }
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.96);
+        }
+        body.dark-mode .theme-toggle {
+            background: #303746;
+            color: #f1f5f9;
+            border-color: #475569;
+        }
+        body.dark-mode .theme-toggle:hover {
+            background: #3c4658;
         }
         canvas {
             border-radius: 32px;
@@ -33,14 +80,40 @@
             font-size: 1.2rem;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
+        body.dark-mode .glass,
+        body.dark-mode #game-ui > div:first-child {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(100, 116, 139, 0.35);
+            color: #e2e8f0;
+        }
+        body.dark-mode .text-slate-800 {
+            color: #e2e8f0;
+        }
+        body.dark-mode .text-slate-500,
+        body.dark-mode .text-slate-400 {
+            color: #aab6c8;
+        }
+        body.dark-mode input,
+        body.dark-mode select {
+            background-color: #1e293b;
+            border-color: #475569;
+            color: #f1f5f9;
+        }
+        body.dark-mode #turn-indicator {
+            background-color: #334155;
+            border-color: #475569;
+        }
     </style>
 </head>
 
 <body class="flex flex-col items-center p-4 md:p-8 space-y-6">
 
-    <div class="text-center">
+    <div class="relative w-full max-w-5xl text-center">
         <h1 class="text-4xl md:text-5xl font-black text-rose-600 drop-shadow-sm tracking-tight">🍓 BERRY CHESS 🫐</h1>
-        <p class="text-slate-500 font-medium italic mt-1">Gourmet Fruit Models. Smooth turn transitions.</p>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
+            <span id="theme-icon" aria-hidden="true">🌙</span>
+            <span id="theme-label">Dark mode</span>
+        </button>
     </div>
 
     <!-- ================= SETUP SCREEN ================= -->
@@ -121,6 +194,7 @@
 const CHESS_STATE = { W: "w", B: "b" };
 let MODE = "hotseat", PLAYER_W = "Strawberry", PLAYER_B = "Blueberry", HUMAN_SIDE = "w";
 let turn = CHESS_STATE.W, winner = null, gameOver = false, selected = null, capturedW = [], capturedB = [];
+let darkMode = false;
 let enPassantTarget = null;
 const castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
 
@@ -325,7 +399,7 @@ function aiMove() {
 =================================================== */
 const canvas = document.getElementById("game");
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xfdf2f2);
+scene.background = new THREE.Color(0xfff1f4);
 
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000);
 camera.position.set(0, 75, 80);
@@ -371,10 +445,49 @@ for (let r = 0; r < 8; r++) {
         const sq = new THREE.Mesh(geo, mat);
         sq.position.set(c * CELL_SIZE - BOARD_OFFSET, -1, r * CELL_SIZE - BOARD_OFFSET);
         sq.receiveShadow = true;
-        sq.userData = { r, c };
+        sq.userData = { r, c, isDark };
         boardGroup.add(sq);
     }
 }
+
+function updateTheme() {
+    const gameStarted = !document.getElementById("game-ui").classList.contains("hidden");
+    const setupMode = document.getElementById("mode").value;
+    const side = gameStarted
+        ? MODE === "hotseat" ? turn : HUMAN_SIDE
+        : setupMode === "ai" ? HUMAN_SIDE : CHESS_STATE.W;
+    document.body.classList.toggle("dark-mode", darkMode);
+    document.body.dataset.side = side;
+    const background = darkMode
+        ? side === CHESS_STATE.W ? 0x21171c : 0x171d2b
+        : side === CHESS_STATE.W ? 0xfff1f4 : 0xeff5ff;
+    scene.background.setHex(background);
+
+    for (const square of boardGroup.children) {
+        const colors = darkMode
+            ? side === CHESS_STATE.W
+                ? [0x51404a, 0x393038]
+                : [0x384761, 0x293243]
+            : side === CHESS_STATE.W
+                ? [0xf4cbd2, 0xfff7f8]
+                : [0xd4e1f8, 0xf6f9ff];
+        square.material.color.setHex(colors[square.userData.isDark ? 0 : 1]);
+    }
+
+    const toggle = document.getElementById("theme-toggle");
+    const icon = document.getElementById("theme-icon");
+    const label = document.getElementById("theme-label");
+    toggle.setAttribute("aria-label", darkMode ? "Switch to light mode" : "Switch to dark mode");
+    toggle.setAttribute("aria-pressed", String(darkMode));
+    icon.textContent = darkMode ? "☀️" : "🌙";
+    label.textContent = darkMode ? "Light mode" : "Dark mode";
+}
+
+document.getElementById("theme-toggle").addEventListener("click", () => {
+    darkMode = !darkMode;
+    updateTheme();
+});
+updateTheme();
 
 const pieceMaterials = {
     gold: new THREE.MeshStandardMaterial({ color: 0xf0c66c, roughness: 0.3, metalness: 0.35 }),
@@ -653,6 +766,7 @@ function updateCameraTurn() {
     } else {
         targetTheta = HUMAN_SIDE === CHESS_STATE.W ? Math.PI / 2 : -Math.PI / 2;
     }
+    updateTheme();
 }
 
 const ray = new THREE.Raycaster();
@@ -759,6 +873,7 @@ function setSide(s) {
 
 document.getElementById("mode").onchange = (e) => {
     document.getElementById("side-select").classList.toggle("hidden", e.target.value !== "ai");
+    updateTheme();
 };
 
 document.getElementById("start").onclick = () => {
