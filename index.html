@@ -379,6 +379,20 @@ for (let r = 0; r < 8; r++) {
 const pieceMaterials = {
     gold: new THREE.MeshStandardMaterial({ color: 0xd8ad62, roughness: 0.32, metalness: 0.55 })
 };
+const roleColors = {
+    P: "#7ec56b",
+    R: "#f07860",
+    N: "#64afe8",
+    B: "#b28ae3",
+    Q: "#f0bf52",
+    K: "#ece8d9"
+};
+const roleMaterials = Object.fromEntries(
+    Object.entries(roleColors).map(([type, color]) => [
+        type,
+        new THREE.MeshStandardMaterial({ color, roughness: 0.4 })
+    ])
+);
 const fruitSpriteMaterials = {};
 
 function getFruitSpriteMaterial(side, type) {
@@ -394,18 +408,15 @@ function getFruitSpriteMaterial(side, type) {
     context.font = '210px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
     context.textAlign = "center";
     context.textBaseline = "middle";
-    context.fillText(side === "w" ? "🍓" : "🫐", 128, 128);
+    context.fillText(side === "w" ? "🍓" : "🫐", 128, 106);
 
     context.beginPath();
-    context.arc(211, 211, 26, 0, Math.PI * 2);
-    context.fillStyle = "rgba(255, 255, 255, 0.96)";
+    context.roundRect(34, 166, 188, 80, 20);
+    context.fillStyle = roleColors[type];
     context.fill();
-    context.lineWidth = 5;
-    context.strokeStyle = side === "w" ? "#b84955" : "#42477f";
-    context.stroke();
-    context.fillStyle = "#263043";
-    context.font = "bold 27px system-ui, sans-serif";
-    context.fillText(type, 211, 212);
+    context.fillStyle = "#20243a";
+    context.font = "bold 68px system-ui, sans-serif";
+    context.fillText(type, 128, 206);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.encoding = THREE.sRGBEncoding;
@@ -422,6 +433,7 @@ function createPieceGeo(side, type) {
     const isStrawberry = side === "w";
     const baseColor = isStrawberry ? 0x8d2f3d : 0x292f68;
     const baseMaterial = new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.4 });
+    const roleMaterial = roleMaterials[type];
 
     const addCylinder = (top, bottom, height, y, material, segments = 40) => {
         const mesh = new THREE.Mesh(
@@ -448,34 +460,100 @@ function createPieceGeo(side, type) {
     }
 
     const sprite = new THREE.Sprite(getFruitSpriteMaterial(side, type));
-    const spriteSize = { P: 5.2, R: 5.2, N: 5.2, B: 5.3, Q: 5.6, K: 5.7 }[type];
+    const spriteSize = { P: 4.9, R: 5.35, N: 5.25, B: 5.3, Q: 5.45, K: 5.5 }[type];
     sprite.scale.set(spriteSize, spriteSize, 1);
-    sprite.position.y = 3.65 + stemHeight * 0.18;
+    sprite.position.y = 3.35 + stemHeight * 0.18;
     piece.add(sprite);
 
     if (type === "R") {
+        const tower = new THREE.Group();
+        tower.position.set(0, 6.05, 0);
+        tower.add(new THREE.Mesh(
+            new THREE.CylinderGeometry(0.68, 0.8, 0.24, 24),
+            roleMaterial
+        ));
         const crown = new THREE.Mesh(
-            new THREE.TorusGeometry(0.75, 0.08, 10, 40),
-            pieceMaterials.gold
+            new THREE.CylinderGeometry(0.62, 0.62, 0.14, 24),
+            roleMaterial
         );
-        crown.rotation.x = Math.PI / 2;
-        crown.position.y = 1.82;
-        piece.add(crown);
-        const crenel = new THREE.BoxGeometry(0.3, 0.34, 0.3);
-        for (let i = 0; i < 4; i++) {
-            const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
-            const top = new THREE.Mesh(crenel, pieceMaterials.gold);
-            top.position.set(Math.cos(angle) * 0.62, 2.0, Math.sin(angle) * 0.62);
-            piece.add(top);
+        crown.position.y = 0.19;
+        tower.add(crown);
+        const battlement = new THREE.BoxGeometry(0.38, 0.48, 0.38);
+        for (const [x, z] of [[-0.48, -0.48], [-0.48, 0.48], [0.48, -0.48], [0.48, 0.48]]) {
+            const merlon = new THREE.Mesh(battlement, roleMaterial);
+            merlon.position.set(x, 0.38, z);
+            tower.add(merlon);
         }
-    } else if (type === "K") {
-        const crown = new THREE.Mesh(
-            new THREE.OctahedronGeometry(0.28, 1),
-            pieceMaterials.gold
+        piece.add(tower);
+    } else if (type === "N") {
+        const horse = new THREE.Shape();
+        horse.moveTo(-0.55, -0.68);
+        horse.quadraticCurveTo(-0.08, -0.42, 0.03, -0.05);
+        horse.lineTo(0.02, 0.35);
+        horse.lineTo(-0.28, 0.8);
+        horse.lineTo(0.22, 0.66);
+        horse.lineTo(0.52, 0.28);
+        horse.lineTo(0.88, 0.1);
+        horse.lineTo(0.55, -0.04);
+        horse.lineTo(0.5, -0.38);
+        horse.lineTo(0.2, -0.68);
+        horse.closePath();
+        const knight = new THREE.Mesh(
+            new THREE.ExtrudeGeometry(horse, { depth: 0.22, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05 }),
+            roleMaterial
         );
-        crown.position.y = 5.95;
-        crown.scale.set(0.8, 1.2, 0.8);
+        knight.scale.set(1.25, 1.35, 0.9);
+        knight.position.set(-0.65, 5.72, 0.82);
+        piece.add(knight);
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 8), baseMaterial);
+        eye.position.set(0.08, 6.7, 1.04);
+        piece.add(eye);
+    } else if (type === "B") {
+        const mitre = new THREE.Mesh(
+            new THREE.ConeGeometry(0.78, 1.75, 4),
+            roleMaterial
+        );
+        mitre.position.set(0, 6.65, 0);
+        mitre.rotation.y = Math.PI / 4;
+        piece.add(mitre);
+        const band = new THREE.Mesh(
+            new THREE.TorusGeometry(0.6, 0.08, 8, 24),
+            baseMaterial
+        );
+        band.position.y = 6.35;
+        piece.add(band);
+        const slit = new THREE.Mesh(
+            new THREE.BoxGeometry(0.13, 0.72, 0.13),
+            baseMaterial
+        );
+        slit.position.set(0.06, 6.72, 0.7);
+        slit.rotation.z = -0.38;
+        piece.add(slit);
+    } else if (type === "Q") {
+        const crown = new THREE.Group();
+        crown.position.y = 6.05;
+        const band = new THREE.Mesh(
+            new THREE.TorusGeometry(0.85, 0.12, 10, 32),
+            roleMaterial
+        );
+        band.rotation.x = Math.PI / 2;
+        crown.add(band);
+        const jewel = new THREE.Mesh(new THREE.SphereGeometry(0.23, 12, 10), roleMaterial);
+        for (let i = 0; i < 5; i++) {
+            const angle = (i / 5) * Math.PI * 2;
+            const point = jewel.clone();
+            point.position.set(Math.cos(angle) * 0.8, 0.18 + (i % 2) * 0.18, Math.sin(angle) * 0.8);
+            crown.add(point);
+        }
         piece.add(crown);
+    } else if (type === "K") {
+        const cross = new THREE.Group();
+        cross.position.set(0, 6.15, 0);
+        const upright = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.45, 0.24), roleMaterial);
+        const crossbar = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.24, 0.24), roleMaterial);
+        crossbar.position.y = 0.28;
+        cross.add(upright, crossbar);
+        piece.add(cross);
     }
 
     return piece;
@@ -489,6 +567,7 @@ function clearGroup(group) {
         if (node.material) {
             for (const material of Array.isArray(node.material) ? node.material : [node.material]) {
                 if (!Object.values(pieceMaterials).includes(material)
+                    && !Object.values(roleMaterials).includes(material)
                     && !Object.values(fruitSpriteMaterials).includes(material)) {
                     materials.add(material);
                 }
